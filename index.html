@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIME TOOLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0b0c;
+  --surface:#111113;
+  --surface2:#18181b;
+  --border:#25252a;
+  --amber:#e8a030;
+  --amber-lo:rgba(232,160,48,0.08);
+  --text:#eae8e2;
+  --muted:#5a5a62;
+  --danger:#b83232;
+  --mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;gap:0;
+  border-bottom:1px solid var(--border);
+  padding:0 2.5rem;
+  flex-shrink:0;
+  height:52px;
+}
+.nav-brand{
+  font-family:var(--mono);font-size:10px;font-weight:400;
+  letter-spacing:0.28em;color:var(--amber);text-transform:uppercase;
+  margin-right:2.5rem;white-space:nowrap;
+}
+.nav-tab{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);
+  padding:0 1.2rem;height:52px;
+  border:none;background:transparent;cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color 0.15s,border-color 0.15s;
+  display:flex;align-items:center;gap:8px;
+}
+.nav-tab svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;flex-shrink:0}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex}
+
+/* ════════════════════════════════
+   STOPWATCH PAGE
+════════════════════════════════ */
+#sw-page{flex-direction:row;overflow:hidden}
+.sw-left{
+  flex:0 0 52%;display:flex;flex-direction:column;justify-content:center;
+  padding:3.5rem 4rem;gap:2rem;border-right:1px solid var(--border);
+}
+.sw-right{
+  flex:1;display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sw-big-time{
+  font-family:var(--mono);font-size:clamp(72px,10vw,130px);
+  font-weight:300;letter-spacing:-0.03em;line-height:1;
+  display:flex;align-items:baseline;gap:4px;
+}
+.sw-big-time .cs{font-size:0.42em;color:var(--muted);margin-left:2px}
+.sw-track{
+  width:100%;height:2px;background:var(--border);border-radius:1px;overflow:hidden;
+}
+.sw-track-fill{
+  height:100%;background:var(--amber);border-radius:1px;width:0%;
+  transition:width 0.05s linear;
+}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
+  padding:14px 28px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);cursor:pointer;border-radius:2px;transition:all 0.13s;
+}
+.btn:hover{border-color:var(--text);color:var(--text)}
+.btn:active{transform:scale(0.97)}
+.btn.go{background:var(--amber);border-color:var(--amber);color:#000;font-weight:500}
+.btn.go:hover{opacity:0.85}
+.btn:disabled{opacity:0.2;pointer-events:none}
+.btn.red:hover{border-color:var(--danger);color:var(--danger)}
+
+.laps-section{display:none;flex-direction:column;flex:1;overflow:hidden}
+.laps-section.show{display:flex}
+.lap-hdr{
+  display:grid;grid-template-columns:80px 1fr 1fr;
+  font-family:var(--mono);font-size:11px;letter-spacing:0.18em;color:var(--muted);
+  text-transform:uppercase;padding:1.8rem 2.5rem 1rem;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.lap-hdr span:last-child{text-align:right}
+.lap-list{display:flex;flex-direction:column;overflow-y:auto;flex:1}
+.lap-row{
+  display:grid;grid-template-columns:80px 1fr 1fr;align-items:center;
+  padding:1.1rem 2.5rem;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:clamp(18px,2.2vw,26px);
+  animation:fadeIn 0.2s ease;
+}
+.lap-row:last-child{border-bottom:none}
+.lap-n{color:var(--muted);font-size:0.62em}
+.lap-t{color:var(--muted);font-size:0.78em}
+.lap-tot{color:var(--text);text-align:right;font-weight:400}
+.lap-list::-webkit-scrollbar{width:3px}
+.lap-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ════════════════════════════════
+   HOURGLASS PAGE
+════════════════════════════════ */
+#hg-page{flex-direction:row}
+.hg-left{
+  flex:0 0 55%;display:flex;align-items:center;justify-content:center;
+  background:var(--surface);position:relative;overflow:hidden;
+  padding:2rem;
+}
+.hg-right{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:3rem 3.5rem;gap:2rem;border-left:1px solid var(--border);
+  overflow-y:auto;
+}
+
+#hg-canvas{display:block}
+
+.hg-big-time{
+  font-family:var(--mono);font-size:clamp(52px,8vw,88px);
+  font-weight:300;letter-spacing:-0.02em;line-height:1;color:var(--text);
+}
+.hg-status-line{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.2em;
+  color:var(--amber);text-transform:uppercase;min-height:14px;
+}
+.hg-bar-wrap{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.hg-bar-fill{height:100%;background:var(--amber);width:100%;border-radius:2px;transition:width 1s linear}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.pset{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.1em;
+  padding:7px 16px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);cursor:pointer;border-radius:2px;transition:all 0.12s;
+}
+.pset:hover{border-color:var(--amber);color:var(--amber)}
+.pset.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-lo)}
+.custom-row{display:flex;align-items:center;gap:8px}
+.custom-row input{
+  width:56px;padding:8px 10px;font-family:var(--mono);font-size:13px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  border-radius:2px;text-align:center;outline:none;
+  -moz-appearance:textfield;
+}
+.custom-row input::-webkit-inner-spin-button{-webkit-appearance:none}
+.custom-row input:focus{border-color:var(--amber)}
+.custom-row label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes fallDot{0%{transform:translateY(0);opacity:1}100%{transform:translateY(18px);opacity:0}}
+.hg-svg{display:block;height:100%;width:auto;max-height:calc(100vh - 52px - 4rem);filter:drop-shadow(0 0 28px rgba(232,160,48,0.14))}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">Time Tools</div>
+  <button class="nav-tab active" id="tab-sw" onclick="showPage('sw')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 15.5 15.5"/><line x1="9" y1="2" x2="15" y2="2"/></svg>
+    ストップウォッチ
+  </button>
+  <button class="nav-tab" id="tab-hg" onclick="showPage('hg')">
+    <svg viewBox="0 0 24 24"><path d="M6 2h12M6 22h12M8 2v4l4 6-4 6v4M16 2v4l-4 6 4 6v4"/></svg>
+    砂時計
+  </button>
+</nav>
+
+<!-- ════ STOPWATCH PAGE ════ -->
+<div class="page active" id="sw-page">
+  <div class="sw-left">
+    <div class="sw-big-time" id="sw-display">
+      <span id="sw-main">00:00</span><span class="cs" id="sw-cs">.00</span>
+    </div>
+    <div class="sw-track"><div class="sw-track-fill" id="sw-fill"></div></div>
+    <div class="btn-row">
+      <button class="btn go" id="sw-start" onclick="swToggle()">スタート</button>
+      <button class="btn" id="sw-lap" onclick="swLap()" disabled>ラップ</button>
+      <button class="btn red" id="sw-reset" onclick="swReset()" disabled>リセット</button>
+    </div>
+  </div>
+  <div class="sw-right">
+    <div class="laps-section" id="sw-laps">
+      <div class="lap-hdr"><span>LAP</span><span>ラップ</span><span>累計</span></div>
+      <div class="lap-list" id="lap-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ HOURGLASS PAGE ════ -->
+<div class="page" id="hg-page">
+  <div class="hg-left" id="hg-left">
+    <svg class="hg-svg" id="hg-svg" viewBox="0 0 220 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="ctop"><polygon points="20,8 200,8 122,168 98,168"/></clipPath>
+        <clipPath id="cbot"><polygon points="98,172 122,172 200,332 20,332"/></clipPath>
+        <linearGradient id="sandgrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#c8780a"/>
+          <stop offset="40%" stop-color="#f0a832"/>
+          <stop offset="100%" stop-color="#c8780a"/>
+        </linearGradient>
+        <linearGradient id="glassgrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#fff" stop-opacity="0.07"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Top sand -->
+      <polygon id="sand-top" points="20,8 200,8 122,168 98,168"
+               fill="url(#sandgrad)" clip-path="url(#ctop)" opacity="0.92"/>
+      <!-- Bottom sand -->
+      <polygon id="sand-bot" points="98,172 122,172 200,332 20,332"
+               fill="url(#sandgrad)" clip-path="url(#cbot)" opacity="0.92"/>
+      <!-- Neck flow particles -->
+      <g id="flow-group" opacity="0">
+        <circle cx="110" cy="169" r="2.2" fill="#ffc84a"/>
+        <circle cx="110" cy="174" r="1.8" fill="#ffb020"/>
+        <circle cx="110" cy="179" r="2.0" fill="#ffc84a"/>
+      </g>
+      <!-- Hourglass frame -->
+      <polygon points="20,8 200,8 122,168 122,172 200,332 20,332 98,172 98,168"
+               fill="none" stroke="#48484f" stroke-width="1.5" stroke-linejoin="round"/>
+      <!-- Caps -->
+      <line x1="14" y1="8" x2="206" y2="8" stroke="#5a5a62" stroke-width="4" stroke-linecap="round"/>
+      <line x1="14" y1="332" x2="206" y2="332" stroke="#5a5a62" stroke-width="4" stroke-linecap="round"/>
+      <!-- Glass sheen -->
+      <polygon points="28,14 58,14 105,162 88,162" fill="url(#glassgrad)"/>
+    </svg>
+  </div>
+  <div class="hg-right">
+    <div>
+      <div class="hg-big-time" id="hg-display">5:00</div>
+      <div class="hg-status-line" id="hg-status">待機中</div>
+    </div>
+    <div class="hg-bar-wrap"><div class="hg-bar-fill" id="hg-bar"></div></div>
+    <div class="presets">
+      <button class="pset" onclick="hgSet(60,this)">1分</button>
+      <button class="pset sel" onclick="hgSet(300,this)">5分</button>
+      <button class="pset" onclick="hgSet(600,this)">10分</button>
+      <button class="pset" onclick="hgSet(1800,this)">30分</button>
+    </div>
+    <div class="custom-row">
+      <input type="number" id="hg-min" min="0" max="99" placeholder="00">
+      <label>分</label>
+      <input type="number" id="hg-sec" min="0" max="59" placeholder="00">
+      <label>秒</label>
+      <button class="btn" onclick="hgSetCustom()" style="padding:9px 14px">セット</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn go" id="hg-start" onclick="hgToggle()">スタート</button>
+      <button class="btn red" onclick="hgReset()">リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════
+// PAGE SWITCH
+// ══════════════════════════
+
+// ══════════════════════════
+// STOPWATCH
+// ══════════════════════════
+let swRunning=false,swElapsed=0,swInterval=null,swLapStart=0,swLaps=[];
+let swSessionStart=0;
+
+function swFmt(ms){
+  const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),cs=Math.floor((ms%1000)/10);
+  return{main:(m<10?'0':'')+m+':'+(s<10?'0':'')+s,cs:'.'+(cs<10?'0':'')+cs};
+}
+function swRender(){
+  const f=swFmt(swElapsed);
+  document.getElementById('sw-main').textContent=f.main;
+  document.getElementById('sw-cs').textContent=f.cs;
+  const pct=Math.min((swElapsed/3600000)*100,100);
+  document.getElementById('sw-fill').style.width=pct+'%';
+}
+function swToggle(){
+  const btn=document.getElementById('sw-start');
+  if(!swRunning){
+    swRunning=true;
+    const t0=Date.now()-swElapsed;
+    swInterval=setInterval(()=>{swElapsed=Date.now()-t0;swRender();},30);
+    btn.textContent='一時停止';btn.classList.remove('go');
+    btn.style.cssText='border-color:#3a3a42;color:#eae8e2';
+    document.getElementById('sw-lap').disabled=false;
+    document.getElementById('sw-reset').disabled=false;
+  }else{
+    swRunning=false;clearInterval(swInterval);
+    btn.textContent='スタート';btn.style.cssText='';btn.classList.add('go');
+  }
+}
+function swLap(){
+  const ms=swElapsed-swLapStart;swLapStart=swElapsed;
+  swLaps.push({n:swLaps.length+1,lap:ms,tot:swElapsed});
+  const list=document.getElementById('lap-list');
+  list.innerHTML='';
+  [...swLaps].reverse().forEach(l=>{
+    const fl=swFmt(l.lap),ft=swFmt(l.tot);
+    const r=document.createElement('div');r.className='lap-row';
+    r.innerHTML=`<span class="lap-n">LAP ${l.n}</span><span class="lap-t">${fl.main}${fl.cs}</span><span class="lap-tot">${ft.main}${ft.cs}</span>`;
+    list.appendChild(r);
+  });
+  document.getElementById('sw-laps').classList.add('show');
+}
+function swReset(){
+  swRunning=false;clearInterval(swInterval);
+  swElapsed=0;swLapStart=0;swLaps=[];swRender();
+  const btn=document.getElementById('sw-start');
+  btn.textContent='スタート';btn.style.cssText='';btn.classList.add('go');
+  document.getElementById('sw-lap').disabled=true;
+  document.getElementById('sw-reset').disabled=true;
+  document.getElementById('sw-laps').classList.remove('show');
+  document.getElementById('lap-list').innerHTML='';
+  document.getElementById('sw-fill').style.width='0%';
+}
+
+// ══════════════════════════════════════════════════════
+// HOURGLASS — SVG-based
+// ══════════════════════════════════════════════════════
+let hgTotal=300,hgRemain=300,hgRunning=false,hgInterval=null;
+let particleRaf=null;
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id+'-page').classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+function hgFmt(s){const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+
+function hgDrawSand(ratio){
+  ratio=Math.max(0,Math.min(1,ratio));
+  const top=document.getElementById('sand-top');
+  const bot=document.getElementById('sand-bot');
+  // Top triangle: corners 20,8  200,8  122,168  98,168
+  // shrink from bottom up as ratio decreases
+  const tyA=8, tyB=168, th=tyB-tyA;
+  const newBotY=tyB-(1-ratio)*th;
+  const tf=(newBotY-tyA)/th;
+  const tlx=20+tf*(98-20), trx=200+tf*(122-200);
+  if(ratio>0.015){
+    top.setAttribute('points',`20,${tyA} 200,${tyA} ${trx.toFixed(1)},${newBotY.toFixed(1)} ${tlx.toFixed(1)},${newBotY.toFixed(1)}`);
+  } else {
+    top.setAttribute('points','110,168 110,168 110,168 110,168');
+  }
+  // Bottom: grows from 332 upward as (1-ratio) increases
+  const byA=172, byB=332, bh=byB-byA;
+  const done=1-ratio;
+  const newTopY=byB-done*bh;
+  const bf=(newTopY-byA)/bh;
+  const blx=98+bf*(20-98), brx=122+bf*(200-122);
+  if(done>0.015){
+    bot.setAttribute('points',`${blx.toFixed(1)},${newTopY.toFixed(1)} ${brx.toFixed(1)},${newTopY.toFixed(1)} 200,332 20,332`);
+  } else {
+    bot.setAttribute('points','110,332 110,332 110,332 110,332');
+  }
+}
+
+function hgParticle(on){
+  const g=document.getElementById('flow-group');
+  if(particleRaf){cancelAnimationFrame(particleRaf);particleRaf=null;}
+  if(!on){g.setAttribute('opacity','0');return;}
+  g.setAttribute('opacity','1');
+  const circles=g.querySelectorAll('circle');
+  const baseYs=[169,174,179];
+  function anim(){
+    const t=(Date.now()*0.005)%1;
+    circles.forEach((c,i)=>{
+      const phase=(t+(i*0.33))%1;
+      const y=baseYs[0]+phase*14;
+      const alpha=(1-phase).toFixed(2);
+      c.setAttribute('cy',y.toFixed(1));
+      c.setAttribute('opacity',alpha);
+    });
+    particleRaf=requestAnimationFrame(anim);
+  }
+  anim();
+}
+
+function hgSet(s,el){
+  hgReset();
+  hgTotal=s;hgRemain=s;
+  document.getElementById('hg-display').textContent=hgFmt(s);
+  document.getElementById('hg-bar').style.cssText='width:100%;transition:none';
+  document.querySelectorAll('.pset').forEach(b=>b.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  hgDrawSand(1);
+}
+
+function hgSetCustom(){
+  const m=parseInt(document.getElementById('hg-min').value)||0;
+  const s=parseInt(document.getElementById('hg-sec').value)||0;
+  const tot=m*60+s;
+  if(tot>0){document.querySelectorAll('.pset').forEach(b=>b.classList.remove('sel'));hgSet(tot,null);}
+}
+
+function hgToggle(){
+  const btn=document.getElementById('hg-start');
+  if(!hgRunning){
+    if(hgRemain<=0)hgReset();
+    hgRunning=true;
+    btn.textContent='一時停止';btn.classList.remove('go');
+    btn.style.cssText='border-color:#3a3a42;color:#eae8e2';
+    document.getElementById('hg-status').textContent='計測中...';
+    document.getElementById('hg-bar').style.transition='width 1s linear';
+    hgParticle(true);
+    hgInterval=setInterval(hgTick,1000);
+  }else{
+    hgRunning=false;clearInterval(hgInterval);
+    hgParticle(false);
+    btn.textContent='スタート';btn.style.cssText='';btn.classList.add('go');
+    document.getElementById('hg-status').textContent='一時停止中';
+    document.getElementById('hg-bar').style.transition='none';
+  }
+}
+
+function hgAlarm(){
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  // ピピピピ・ピピピピ = 2 groups of 4 beeps, short gap between groups
+  const beepMs=100, gapMs=80, groupGap=400;
+  const freq=1050;
+  let t=ac.currentTime+0.05;
+  for(let g=0;g<2;g++){
+    for(let b=0;b<4;b++){
+      const osc=ac.createOscillator();
+      const gain=ac.createGain();
+      osc.connect(gain);gain.connect(ac.destination);
+      osc.type='square';osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(0.18,t+0.005);
+      gain.gain.setValueAtTime(0.18,t+beepMs/1000-0.01);
+      gain.gain.linearRampToValueAtTime(0,t+beepMs/1000);
+      osc.start(t);osc.stop(t+beepMs/1000+0.02);
+      t+=( beepMs+gapMs)/1000;
+    }
+    t+=groupGap/1000;
+  }
+}
+
+function hgTick(){
+  if(hgRemain>0){
+    hgRemain--;
+    document.getElementById('hg-display').textContent=hgFmt(hgRemain);
+    hgDrawSand(hgRemain/hgTotal);
+    const pct=(hgRemain/hgTotal*100).toFixed(2);
+    document.getElementById('hg-bar').style.width=pct+'%';
+  }
+  if(hgRemain<=0){
+    clearInterval(hgInterval);hgRunning=false;
+    hgParticle(false);
+    hgAlarm();
+    document.getElementById('hg-status').textContent='完了！';
+    document.getElementById('hg-bar').style.cssText='width:0%;transition:none';
+    const btn=document.getElementById('hg-start');
+    btn.textContent='スタート';btn.style.cssText='';btn.classList.add('go');
+    // flip animation
+    const svg=document.getElementById('hg-svg');
+    svg.style.transition='transform 0.9s cubic-bezier(.4,0,.2,1)';
+    svg.style.transform='rotate(180deg)';
+    setTimeout(()=>{
+      svg.style.transition='';svg.style.transform='';
+      hgRemain=hgTotal;
+      hgDrawSand(1);
+      document.getElementById('hg-display').textContent=hgFmt(hgRemain);
+      document.getElementById('hg-status').textContent='待機中';
+      document.getElementById('hg-bar').style.cssText='width:100%;transition:none';
+    },1000);
+  }
+}
+
+function hgReset(){
+  hgRunning=false;clearInterval(hgInterval);
+  hgParticle(false);
+  hgRemain=hgTotal;
+  hgDrawSand(1);
+  document.getElementById('hg-display').textContent=hgFmt(hgRemain);
+  document.getElementById('hg-status').textContent='待機中';
+  document.getElementById('hg-bar').style.cssText='width:100%;transition:none';
+  const btn=document.getElementById('hg-start');
+  btn.textContent='スタート';btn.style.cssText='';btn.classList.add('go');
+}
+
+// Init
+hgDrawSand(1);
+</script>
+</body>
+</html>
